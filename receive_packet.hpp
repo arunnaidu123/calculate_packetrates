@@ -17,13 +17,13 @@ struct network_stats
   int compute_stats(long int total_events,int packet_size, long int nsec) 
   {
     std::unique_lock<std::mutex> lk(m);
-    cv.wait(lk, [this]{return readFlag;});  
+    //cv.wait(lk, [this]{return readFlag;});  
     
     gbps = ((long double)(total_events*packet_size*8)/((long double)nsec));
 
-    writeFlag = true;
-    readFlag = false;
-    cv.notify_one();
+    //writeFlag = true;
+    //readFlag = false;
+    //cv.notify_one();
     return 0;
   }
   
@@ -32,13 +32,13 @@ struct network_stats
     long double temp_gbps;
 
     std::unique_lock<std::mutex> lk(m);
-    cv.wait(lk, [this]{return writeFlag;});
+    //cv.wait(lk, [this]{return writeFlag;});
     
     temp_gbps = gbps*1;
     
-    writeFlag = false;
-    readFlag = true;
-    cv.notify_one();   
+    //writeFlag = false;
+    //readFlag = true;
+    //cv.notify_one();   
     return temp_gbps; 
   }  
 };
