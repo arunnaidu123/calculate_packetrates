@@ -14,15 +14,10 @@
 #include <sched.h>
 #include <pthread.h>
 #include <time.h>
-#include <thread>
-#include "receive_packet.hpp"
-struct network_stats ip_link[4];
-//struct network_stats link1;
-//struct network_stats link2;
-//struct network_stats link3;
 
 
-int receive_packets(char *ip_address, int thread_id)
+
+int main(int argc, char* argv[])
 {
   
   static const int udp_port_number = 1313;
@@ -41,7 +36,7 @@ int receive_packets(char *ip_address, int thread_id)
   memset(&server_address, 0, sizeof(server_address));
   
   server_address.sin_family = AF_INET;
-  inet_pton(AF_INET, ip_address, &server_address.sin_addr);
+  inet_pton(AF_INET, argv[1], &server_address.sin_addr);
   server_address.sin_port = htons(udp_port_number);
   
   if (::bind(sock_fd, (struct sockaddr *) &server_address, sizeof(server_address)) < 0)
@@ -81,7 +76,7 @@ int receive_packets(char *ip_address, int thread_id)
   //struct timeval tv0 = get_time();
     
   
-  uint64_t total_events=0;  
+  uint64_t total_events=0, missed_events=0;  
   uint16_t *packet = new uint16_t[packet_size/2];
   
   std::chrono::system_clock::time_point start = std::chrono::high_resolution_clock::now();
@@ -116,8 +111,8 @@ int receive_packets(char *ip_address, int thread_id)
       
     }
     long nsec = std::chrono::duration_cast<std::chrono::nanoseconds> (std::chrono::high_resolution_clock::now() - start).count();
-    total_events += num_events;
-    for(int i=0;i<4;i++) ip_link[i].compute_stats(total_events,packet_size,nsec);
+    total_events += num_events;  
+    std::cout<<"gbps: "<<((long double)(total_events*packet_size*8)/((long double)nsec))<<" \r";
     std::cout.flush();
   }
 
@@ -125,23 +120,5 @@ int receive_packets(char *ip_address, int thread_id)
 }
         
       
-int main(int argc, char *argv[])
-{
-  std::thread t[4];
-  long double *gbps = new long double[4];
-  for(int i=0;i<4;i++) t[i] = std::thread(receive_packets,argv[i+1],i);
-  
-  while(1)
-  {
-    for(int i=0;i<4;i++) gbps[i] = ip_link[i].read_stats();
-
-    for(int i=0;i<4;i++) std::cout<<"link"<<i<<": "<<gbps[i];
-    std::cout<<"\r";
-  }
-  
-  for(int i=0;i<4;i++) t[i].join();
-}  
- 
-
 
 
